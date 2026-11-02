@@ -40,14 +40,24 @@ def box(vertical=False, spacing=8):
 
 
 def artwork(provider, size=26):
-    path = ASSETS / f"{provider}.svg"
-    image = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(str(path), size, size, True))
-    image.get_accessible().set_name(provider + " logo, from FrugalBar")
+    image = None
+    for suffix in ("svg", "png"):
+        try:
+            image = Gtk.Image.new_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(str(ASSETS / f"{provider}.{suffix}"), size, size, True))
+            break
+        except GLib.Error:
+            continue
+    if image is None:
+        image = Gtk.Image.new_from_icon_name("image-missing-symbolic", Gtk.IconSize.LARGE_TOOLBAR)
+        image.get_accessible().set_name(provider + " logo unavailable")
+        image.set_tooltip_text("Logo unavailable. Install the librsvg image loader.")
+    else:
+        image.get_accessible().set_name(provider + " logo, from FrugalBar")
     return image
 
 
 class WindowCell(Gtk.Box):
-    def __init__(self, window, snapshot, now):
+    def __init__(self, window, snapshot, now, wide=False):
         super().__init__(orientation=Gtk.Orientation.VERTICAL, spacing=3)
         self.set_hexpand(True)
         self.set_size_request(96, -1)
@@ -59,11 +69,14 @@ class WindowCell(Gtk.Box):
             area.set_size_request(90, 10)
             area.connect("draw", self.draw)
             self.pack_start(area, False, False, 0)
-            text = f"{window.used * 100:.0f}% used" + (" · blocked" if window.blocked else "")
+            percent = f"{window.used * 100:.0f}" if window.reported_percent is None else f"{window.reported_percent:.4g}"
+            text = percent + "% used" + (" · blocked" if window.blocked else "")
         else:
             text = "Blocked" if window.blocked else "Not published"
         self.pack_start(label(text), False, False, 0)
         reset = countdown(window.resets_at, now)
+        if wide and window.resets_at is not None and window.resets_at > now:
+            reset = "Resets in " + reset
         self.pack_start(label(reset, dim=True), False, False, 0)
         self.set_tooltip_text(snapshot.name + ": " + window.label + " · " + text + " · " + reset
                               + (" · Last known reading" if snapshot.stale else "")
@@ -101,6 +114,7 @@ class Ledger(Gtk.Application):
         self.history = collections.defaultdict(lambda: collections.deque(maxlen=60))
         self.timer = None
         self.stopping = False
+        self.wide = True
         if not demo:
             from . import providers
             self.engine = Engine(providers.fetch, providers.definitions())
@@ -150,6 +164,7 @@ class Ledger(Gtk.Application):
         outer.pack_start(footer, False, False, 0)
         self.window.connect("key-press-event", self.key_pressed)
         self.tray = Tray(self.toggle, lambda: self.refresh(True), self.settings, self.stop)
+        self.window.connect("configure-event", self.resized)
         self.render()
         self.window.show_all()
         if self.hidden:
@@ -162,6 +177,13 @@ class Ledger(Gtk.Application):
         if not self.tray.available():
             self.window.show_all()
             self.window.present()
+        return False
+
+    def resized(self, _, event):
+        wide = event.width >= 960
+        if wide != self.wide:
+            self.wide = wide
+            self.render()
         return False
 
     def on_close(self, *_):
@@ -244,7 +266,7 @@ class Ledger(Gtk.Application):
                    or s.state != "not_configured"]
         if self.demo:
             self.content.pack_start(label("ILLUSTRATIVE DATA · Demo only · No credentials or network reads"), False, False, 0)
-        critical = sum(any(urgency(w, now) == "critical" for w in s.windows) for s in visible)
+        critical = sum(s.critical or any(urgency(w, now) == "critical" for w in s.windows) for s in visible)
         stale = sum(s.stale for s in visible)
         failed = sum(s.state not in {"measured", "not_configured"} and not s.stale for s in visible)
         self.health.set_text(f"{critical} critical · {failed} not readable · {stale} stale")
@@ -266,8 +288,13 @@ class Ledger(Gtk.Application):
                     row += 1
                     current_group = group
                 identity = box(False)
+                identity.set_valign(Gtk.Align.CENTER)
                 identity.pack_start(artwork(snapshot.provider), False, False, 0)
-                identity.pack_start(label(snapshot.name), True, True, 0)
+                identity_text = box(True, 2)
+                identity_text.pack_start(label(snapshot.name), False, False, 0)
+                if self.wide and snapshot.source:
+                    identity_text.pack_start(label(snapshot.source, dim=True), False, False, 0)
+                identity.pack_start(identity_text, True, True, 0)
                 identity.set_size_request(170, -1)
                 identity.set_tooltip_text(snapshot.source + (" · Read " + time.strftime("%H:%M:%S", time.localtime(snapshot.measured_at)) if snapshot.measured_at else ""))
                 grid.attach(identity, 0, row, 1, 1)
@@ -281,7 +308,7 @@ class Ledger(Gtk.Application):
                     for window in matching:
                         if len(matching) > 1 and window.detail:
                             column.pack_start(label(window.detail, dim=True), False, False, 0)
-                        column.pack_start(WindowCell(window, snapshot, now), False, False, 0)
+                        column.pack_start(WindowCell(window, snapshot, now, self.wide), False, False, 0)
                     column.set_hexpand(True)
                     grid.attach(column, col, row, 1, 1)
                 status = box(True, 3)
@@ -293,7 +320,7 @@ class Ledger(Gtk.Application):
                 extra = [w for w in snapshot.windows if w.label not in {"5H", "WK", "MO"}]
                 for window in extra:
                     grid.attach(label(window.label, dim=True), 0, row, 1, 1)
-                    grid.attach(WindowCell(window, snapshot, now), 1, row, 3, 1)
+                    grid.attach(WindowCell(window, snapshot, now, self.wide), 1, row, 3, 1)
                     row += 1
                 if snapshot.message or snapshot.stale:
                     message = snapshot.message
@@ -332,7 +359,7 @@ class Ledger(Gtk.Application):
             self.content.pack_start(grid, False, False, 0)
         title, tooltip, level = tray_reading(snapshots, now)
         attention = sum(s.state not in {"measured", "not_configured"} for s in snapshots)
-        self.tray.update(title, tooltip + f" · {attention} readings need attention", level)
+        self.tray.update(title, tooltip + (f" · {attention} readings need attention" if attention else ""), level)
         if self.last_attempt and not self.busy:
             self.checked.set_text("Checked " + time.strftime("%H:%M:%S", time.localtime(self.last_attempt)))
         self.content.show_all()
@@ -350,6 +377,8 @@ class Ledger(Gtk.Application):
             return "— Not configured"
         if snapshot.state != "measured":
             return "⊖ Not readable"
+        if snapshot.critical:
+            return "! Insufficient balance"
         if any(urgency(w, now) == "critical" for w in snapshot.windows):
             return "! Exhausted / near limit"
         if any(urgency(w, now) == "warning" for w in snapshot.windows):

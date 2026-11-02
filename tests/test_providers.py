@@ -61,8 +61,10 @@ class ProvidersTests(unittest.TestCase):
         self.assertEqual(balances[0].value, '17.01')
 
     def test_bad_percentages_and_booleans_do_not_create_windows(self):
-        for value in (None, True, 'nan', float('inf'), -1, 101):
+        for value in (None, True, 'nan', float('inf')):
             self.assertEqual(providers.parse('clinepass', {'limits': [{'type': 'five_hour', 'percentUsed': value}]})[0], ())
+        for value, used in ((-1, 0), (101, 1)):
+            self.assertEqual(providers.parse('clinepass', {'limits': [{'type': 'five_hour', 'percentUsed': value}]})[0][0].used, used)
 
     def test_devpass_never_uses_someone_elses_pinned_renewal(self):
         windows, _, _ = providers.parse('devpass', {'data': {'devPlan': 'pro',
@@ -77,7 +79,7 @@ class ProvidersTests(unittest.TestCase):
             ('commandcode', {'data': {'windowLimits': {'fiveHour': {'used': '15', 'cap': '100'}}}}, '5H', .15),
             ('muse', {'is_subs_active': True, 'subs_usage': {'window': {
                 'used_percent': '35', 'window_duration_mins': 300, 'resets_at': '1793617200000'}}}, '5H', .35),
-            ('kiro', {'usageBreakdownList': [{'resourceType': 'CREDIT',
+            ('kiro', {'nextDateReset': 1793617200, 'usageBreakdownList': [{'resourceType': 'CREDIT',
                 'currentUsageWithPrecision': 30, 'currentOveragesWithPrecision': 10,
                 'usageLimitWithPrecision': 100}]}, 'MO', .2),
             ('githubRest', {'resources': {'core': {'limit': 5000, 'remaining': 4000}}}, '1H', .2),
@@ -101,6 +103,7 @@ class ProvidersTests(unittest.TestCase):
             result = providers.fetch('deepseek')
         self.assertEqual(result.state, 'measured')
         self.assertIn('cannot fund calls', result.message)
+        self.assertTrue(result.critical)
 
     def test_claude_throttle_is_not_credential_rejected(self):
         with patch.object(providers, 'resolve', return_value=Credential('fixture')), \

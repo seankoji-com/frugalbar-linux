@@ -9,6 +9,7 @@ class FrugalbarLinux < Formula
   depends_on :linux
   depends_on "gtk+3"
   depends_on "libsecret"
+  depends_on "librsvg"
   depends_on "pygobject3"
   depends_on "python@3.15"
 
@@ -17,6 +18,7 @@ class FrugalbarLinux < Formula
     libexec.install "packaging/launch.py"
     (bin/"frugalbar-linux").write <<~SH
       #!/bin/sh
+      export PATH="#{HOMEBREW_PREFIX}/bin:#{HOMEBREW_PREFIX}/sbin:$PATH"
       exec "#{Formula["python@3.15"].opt_bin}/python3.15" -I "#{libexec}/launch.py" "$@"
     SH
   end
@@ -37,5 +39,11 @@ class FrugalbarLinux < Formula
     result = JSON.parse(shell_output("#{bin}/frugalbar-linux --demo --json"))
     assert_equal true, result["illustrative"]
     assert_equal 10, result["providers"].length
+    system Formula["python@3.15"].opt_bin/"python3.15", "-I", "-c", <<~PY
+      import gi
+      gi.require_version("GdkPixbuf", "2.0")
+      from gi.repository import GdkPixbuf
+      GdkPixbuf.Pixbuf.new_from_file_at_scale("#{libexec}/frugalbar_linux/assets/openai.svg", 26, 26, True)
+    PY
   end
 end

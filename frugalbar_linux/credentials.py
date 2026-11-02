@@ -105,6 +105,9 @@ def resolve(provider, *, discover=False, environment=None, home=None):
         path = next((p for p in candidates if (p / '.credentials.json').is_file()), candidates[-1])
         oauth = read_json(path / '.credentials.json').get('claudeAiOauth', {})
         token = text(oauth.get('accessToken')) if isinstance(oauth, dict) else ''
+        expiry = oauth.get('expiresAt') if isinstance(oauth, dict) else None
+        if isinstance(expiry, (int, float)) and not isinstance(expiry, bool) and expiry / 1000 <= time.time():
+            return None
         return Credential(token, 'Claude Code login') if token else None
     if provider == 'openai':
         candidates = [Path(env['CODEX_HOME'])] if env.get('CODEX_HOME') else []
@@ -135,7 +138,14 @@ def resolve(provider, *, discover=False, environment=None, home=None):
             entry = max(entries, key=lambda item: text(item.get('expires_at')))
             return Credential(text(entry.get('key')), 'Grok login')
     if provider == 'clinepass':
-        path = Path(env.get('CLINE_DATA_DIR') or Path(env.get('CLINE_DIR') or root / '.cline') / 'data')
+        candidates = []
+        if env.get('CLINE_DATA_DIR'):
+            candidates.append(Path(env['CLINE_DATA_DIR']))
+        if env.get('CLINE_DIR'):
+            candidates.append(Path(env['CLINE_DIR']) / 'data')
+        candidates.append(root / '.cline/data')
+        path = next((p for p in candidates if (p / 'settings/providers.json').is_file()
+                     or (p / 'secrets.json').is_file()), candidates[-1])
         providers = read_json(path / 'settings/providers.json').get('providers', {})
         for key in ('cline', 'cline-pass'):
             entry = providers.get(key, {}) if isinstance(providers, dict) else {}

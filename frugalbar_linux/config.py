@@ -32,8 +32,12 @@ def save(settings: dict) -> None:
 def desktop_entry(hidden: bool = False) -> str:
     # Desktop Entry quoting is not shell quoting. Quote both executable and path.
     def quote(value):
-        return '"' + str(value).replace("\\", "\\\\").replace('"', '\\"').replace("`", "\\`").replace("$", "\\$") + '"'
+        return '"' + str(value).replace("%", "%%").replace("\\", "\\\\").replace('"', '\\"').replace("`", "\\`").replace("$", "\\$") + '"'
     executable = Path(sys.argv[0]).resolve()
+    if executable.name == "launch.py":
+        wrapper = executable.parent.parent / "bin/frugalbar-linux"
+        if wrapper.is_file():
+            executable = wrapper
     if executable.name in {"__main__.py", "ui.py"} or executable.suffix == ".py":
         command = quote(sys.executable) + " -m frugalbar_linux"
         directory = "Path=" + str(Path(__file__).resolve().parents[1]) + "\n"

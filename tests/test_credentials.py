@@ -46,6 +46,16 @@ class CredentialsTests(unittest.TestCase):
         self.write('.local/share/opencode/auth.json', {'github-copilot': {'refresh': 'durable', 'access': 'wrong'}})
         self.assertEqual(self.resolve('copilot', discover=True).token, 'durable')
 
+    def test_expired_claude_token_is_not_sent_to_vendor(self):
+        self.write('.claude/.credentials.json', {'claudeAiOauth': {'accessToken': 'expired', 'expiresAt': 1}})
+        self.assertIsNone(self.resolve('claude', discover=True))
+
+    def test_cline_stale_override_falls_back_to_existing_login(self):
+        self.write('.cline/data/secrets.json', {'clineApiKey': 'fixture'})
+        result = resolve('clinepass', discover=True, home=self.root,
+                         environment={'CLINE_DATA_DIR': str(self.root / 'missing')})
+        self.assertEqual(result.token, 'fixture')
+
     def test_cline_nested_auth_and_legacy_key(self):
         self.write('.cline/data/settings/providers.json', {'providers': {'cline-pass': {
             'settings': {'auth': {'accessToken': 'expired', 'expiresAt': 1}, 'apiKey': 'fallback'}}}})

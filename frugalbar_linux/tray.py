@@ -1,7 +1,7 @@
 """Cinnamon XApp tray with a classic X11 fallback."""
 from pathlib import Path
 
-from gi.repository import Gtk, GdkPixbuf
+from gi.repository import Gtk, GdkPixbuf, GLib
 
 
 class Tray:
@@ -54,7 +54,12 @@ class Tray:
             self.icon.set_icon_name(path)
             self.icon.set_label(label)
         else:
-            self.icon.set_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(path, 24, 24, True))
+            try:
+                self.icon.set_from_pixbuf(GdkPixbuf.Pixbuf.new_from_file_at_scale(path, 24, 24, True))
+            except GLib.Error:
+                self.icon.set_from_icon_name({"critical": "dialog-error-symbolic",
+                    "warning": "dialog-warning-symbolic", "normal": "utilities-system-monitor-symbolic",
+                    "unknown": "dialog-question-symbolic"}[level])
 
     def close(self):
         self.icon.set_visible(False)

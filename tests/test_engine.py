@@ -8,7 +8,7 @@ class PollTests(unittest.TestCase):
     def setUp(self):
         self.now = 1000
         self.calls = 0
-        self.value = Snapshot("claude", "Claude", (Window("5H", .8, 2000, 18000),), measured_at=1000)
+        self.value = Snapshot("claude", "Claude", (Window("5H", .8, 2000, 18000),), measured_at=1000, credential_id="fixture-account")
         def fetch(*args, **kwargs):
             self.calls += 1
             return self.value
@@ -16,7 +16,7 @@ class PollTests(unittest.TestCase):
 
     def test_failure_keeps_last_reading_but_marks_stale(self):
         self.engine.refresh()
-        self.value = Snapshot("claude", "Claude", state="error", message="Timed out")
+        self.value = Snapshot("claude", "Claude", state="error", message="Timed out", credential_id="fixture-account")
         self.now += 120
         self.engine.refresh()
         retained = self.engine.snapshots["claude"]
@@ -49,8 +49,14 @@ class PollTests(unittest.TestCase):
 
     def test_success_replaces_stale(self):
         self.engine.accept(self.value)
-        self.engine.accept(Snapshot("claude", "Claude", state="error"))
+        self.engine.accept(Snapshot("claude", "Claude", state="error", credential_id="fixture-account"))
         self.engine.accept(replace(self.value, measured_at=1100))
+        self.assertFalse(self.engine.snapshots["claude"].stale)
+
+    def test_unproven_identity_drops_previous_reading_conservatively(self):
+        self.engine.accept(self.value)
+        self.engine.accept(Snapshot("claude", "Claude", state="error", message="Could not read CLI login"))
+        self.assertFalse(self.engine.snapshots["claude"].windows)
         self.assertFalse(self.engine.snapshots["claude"].stale)
 
     def test_account_change_does_not_carry_another_accounts_reading(self):

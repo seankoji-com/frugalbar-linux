@@ -13,6 +13,7 @@ class Window:
     duration: float | None = None
     blocked: bool = False
     detail: str = ""
+    reported_percent: float | None = None
 
     def __post_init__(self):
         if self.used is not None and (
@@ -60,26 +61,29 @@ class Snapshot:
     retry_at: float | None = None
     source: str = ""
     credential_id: str = field(default="", repr=False)
+    critical: bool = False
 
 
 def urgency(window: Window, now: float) -> str:
     if window.blocked or window.used is not None and window.used >= .95:
         return "critical"
-    pace = window.pace(now)
-    if window.used is not None and (window.used >= .8 or pace is not None and window.used > pace):
+    if window.used is not None and window.used >= .8:
         return "warning"
     return "normal"
 
 
 def tray_reading(snapshots: list[Snapshot], now: float) -> tuple[str, str, str]:
     """Match the menu title: tightest live, unspent subscription window."""
-    windows = [(snapshot, window) for snapshot in snapshots
+    live = [snapshot for snapshot in snapshots
                if snapshot.state == "measured" and not snapshot.stale
-               and snapshot.provider not in {"githubRest", "githubGraphql"}
+               and snapshot.provider not in {"githubRest", "githubGraphql"}]
+    published = [window for snapshot in live for window in snapshot.windows
+                 if window.used is not None or window.blocked]
+    windows = [(snapshot, window) for snapshot in live
                for window in snapshot.windows
                if window.used is not None and window.used < 1 and not window.blocked]
-    level = "normal"
-    for snapshot in snapshots:
+    level = "normal" if published else "unknown"
+    for snapshot in live:
         for window in snapshot.windows:
             candidate = urgency(window, now)
             if candidate == "critical":
@@ -87,8 +91,7 @@ def tray_reading(snapshots: list[Snapshot], now: float) -> tuple[str, str, str]:
             elif candidate == "warning" and level != "critical":
                 level = "warning"
     if not windows:
-        return "FrugalBar", "No current subscription window", level if any(
-            s.windows for s in snapshots) else "unknown"
+        return "FrugalBar", "No current unspent subscription window", level
     snapshot, window = max(windows, key=lambda pair: pair[1].used)
     remaining = (1 - window.used) * 100
     return f"{window.label} {remaining:.0f}%", f"{snapshot.name} · {window.label} · {remaining:.0f}% left", level
