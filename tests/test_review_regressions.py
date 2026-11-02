@@ -6,6 +6,11 @@ from frugalbar_linux import providers
 
 
 class ReviewRegressions(unittest.TestCase):
+    def test_negative_percentage_cannot_disagree_with_zero_meter_label(self):
+        windows, _, _ = providers.parse("clinepass", {"limits": [{"type": "five_hour", "percentUsed": -1}]})
+        self.assertEqual(windows[0].used, 0)
+        self.assertIsNone(windows[0].reported_percent)
+
     def test_no_live_subscription_never_makes_a_green_or_developer_red_tray(self):
         stale = Snapshot("claude", "Claude", (Window("5H", .1),), stale=True)
         developer = Snapshot("githubRest", "GitHub", (Window("1H", .99),))

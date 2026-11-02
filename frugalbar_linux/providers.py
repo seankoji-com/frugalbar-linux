@@ -88,7 +88,8 @@ def fraction(value, scale=100):
 def published_percent(label, value, reset=None, duration=None, **kwargs):
     raw = number(value)
     used = min(max(raw / 100, 0), 1) if raw is not None else None
-    return window(label, used, reset, duration, reported_percent=raw, **kwargs)
+    return window(label, used, reset, duration,
+                  reported_percent=raw if raw is not None and raw > 100 else None, **kwargs)
 
 
 def ratio(used, limit):
