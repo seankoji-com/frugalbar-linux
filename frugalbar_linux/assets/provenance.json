@@ -1,0 +1,31 @@
+{
+  "repository": "https://github.com/seankoji-com/frugalbar",
+  "revision": "3a058ce5f9298d90d57459b039b745d40224af3d",
+  "sources": [
+    "Sources/QuotaBarUI/Components/VendorAvatarView.swift",
+    "Sources/QuotaBarUI/Components/VendorAssetData.swift"
+  ],
+  "licence": "MIT; copyright 2026 Sean Carey; vendor trademarks belong to their owners",
+  "sha256": {
+    "antigravityArgon.svg": "be3390162c8ce4bda1ef1fa193f3e54340878a422ce36c06208d565fc95b921e",
+    "antigravityClaude.svg": "d0f87e75c6f62b7fad68b2b7213583d2427ead53c78f627ec8e05b30f51cdc77",
+    "claude.png": "d10b80c92d49f4a6e081ee29bb356c65038d98e21623037eae589c3b8a00d89a",
+    "claude.svg": "d0f87e75c6f62b7fad68b2b7213583d2427ead53c78f627ec8e05b30f51cdc77",
+    "clinepass.svg": "f4a5da8555f2b9dae1650c2f9313500eeee9cbb1a2dff1c0db130d43e5ed8c5c",
+    "commandcode.svg": "b97260cb2c3d1922b045b121d7a7ca9dfaaf454ec24bb477e1aeae6d24a37c9e",
+    "copilot.svg": "578c7af9fe229a110af971ec9828232be5da11347a5b9e867ed5d2ed1d522fb9",
+    "deepseek.svg": "918a7a06606c78bce052e06550a6a0021713ac91eda91c15c7dd562ed34aa0d0",
+    "devpass.svg": "1f95771ddd27e86d9768192e40f539e26d9fec93c2ce70359d2fc96b3343c3e0",
+    "gemini.png": "3ee4f6f2cc7da56d501deb0621c1b9c9dfad5cea2bfd725c14db2ff5929bcc29",
+    "gemini.svg": "be3390162c8ce4bda1ef1fa193f3e54340878a422ce36c06208d565fc95b921e",
+    "githubGraphql.svg": "61d959a4b2f8a812b36df4a2cc1ab5efdc30aef1e9b919daa37ba9fa0b68b6c6",
+    "githubRest.svg": "61d959a4b2f8a812b36df4a2cc1ab5efdc30aef1e9b919daa37ba9fa0b68b6c6",
+    "grok.svg": "795d64395de8f465bceaa53761f6b97ddfdc70dbec2a12ca2ef3b2a6653c4583",
+    "kiro.svg": "e85039fceff0f0a360721d47e261e305f29209fa39ce0c61e8ad29f3d4985f0d",
+    "muse.svg": "f42cd4c10f5b07f0f11b24dc81e03ad9f2efd3abbd64e989d1d39b7ee3382e30",
+    "openai.svg": "04bf4b4ee9514d755e1b10c27cb3d164e401a760d1e67bcbf566cb288564f6cc",
+    "opencode.png": "f5b9b0a905eeb7a3f89da23fd081e74b983cac9c1a4af62dbc34f5e6fb096dde",
+    "opencode.svg": "ac5d1f3d51703652f4e722e77588064d84a9fee3e3aa23606eec73bc64806c32",
+    "openrouter.svg": "1d3a65fbb04ed6bf4cbf624921ac43336417ee55a8bdd8ffc9f2358c8710dcb9"
+  }
+}

@@ -1,0 +1,20 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "frugalbar-linux"
+version = "0.1.0"
+description = "AI usage and balances in the Linux Mint Cinnamon tray"
+requires-python = ">=3.10"
+license = {text = "MIT"}
+authors = [{name = "Sean Carey"}]
+
+[project.scripts]
+frugalbar-linux = "frugalbar_linux.__main__:main"
+
+[tool.setuptools.package-data]
+frugalbar_linux = ["assets/*.svg", "assets/*.png", "assets/provenance.json"]
+
+[tool.setuptools.packages.find]
+include = ["frugalbar_linux*"]
