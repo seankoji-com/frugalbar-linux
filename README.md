@@ -2,7 +2,7 @@
 
 AI subscription usage and API balances in a native Linux Mint Cinnamon window and tray. This is the secondary Linux version of [FrugalBar](https://github.com/seankoji-com/frugalbar), using the selected Mint Ledger design and the original provider logos from that repository.
 
-Initial release preparation is in progress. The Homebrew formula is not published yet.
+Version 0.1.0 source is released. The Homebrew formula is not published in the tap yet.
 
 ## Run from source on Mint
 

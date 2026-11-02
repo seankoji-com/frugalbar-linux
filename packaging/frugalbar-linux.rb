@@ -2,8 +2,7 @@ class FrugalbarLinux < Formula
   desc "AI subscription usage and balances in the Linux Mint Cinnamon tray"
   homepage "https://github.com/seankoji-com/frugalbar-linux"
   url "https://github.com/seankoji-com/frugalbar-linux/archive/refs/tags/v0.1.0.tar.gz"
-  # Replaced with the verified release archive SHA before tap publication.
-  sha256 "RELEASE_SHA256"
+  sha256 "8c7d02b6bd4357c6b16a75cfd8f027c166d8274a1f1bcd79491e06770ff2f208"
   license "MIT"
 
   depends_on :linux
